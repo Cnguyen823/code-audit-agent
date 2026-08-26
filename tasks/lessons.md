@@ -82,3 +82,17 @@ coaching mode says about who types it; (2) when code does get written,
 walk through it with the user before treating it as finished — as it's
 built, or immediately after, but before it's committed and moved past.
 Explaining code well is not a substitute for reviewing it together.
+
+---
+
+## Reference
+
+Session one's concept explanations (the request walkthrough, idempotency,
+the SKIP LOCKED queue, the asyncio/GIL split, retrieve-then-verify RAG,
+trace propagation, and the interview drills) were also built out as a
+styled reference page:
+
+https://claude.ai/code/artifact/53c48d2c-5c7b-4891-89d3-b1b3274e167a
+
+Same content as `docs/concepts.md`, kept in sync as a study aid — not
+project documentation, so it lives here rather than in `docs/`.
