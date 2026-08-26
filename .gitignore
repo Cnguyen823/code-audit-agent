@@ -1,0 +1,16 @@
+# Virtual environment
+.venv/
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+
+# Environment variables / secrets
+.env
+
+# Local database / vector store artifacts
+*.db
+*.sqlite3
+
+# OS files
+.DS_Store
