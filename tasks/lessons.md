@@ -55,3 +55,30 @@ and the follow-up is unanswerable once you've committed to it.
 
 *(Kept here as a coaching note: this one is the user's pattern to watch,
 recorded because the same failure mode applies to me.)*
+
+---
+
+## 3. Code isn't done when it's explained — it's done when it's reviewed
+
+**What happened.** Session one was explicitly scoped as planning and
+architecture, no code yet. Mid-session, I wrote and ran an experiment
+script (`async_fetch.py`) as a teaching demo, then explained it in depth
+afterward. That's not the same thing as reviewing it *together* — by the
+time the explanation happened, the file already existed and had already
+run. The user caught this: they never actually oversaw its creation, and
+today wasn't supposed to have code in it at all.
+
+**Why it happened.** The project's coaching mode says "Claude writes the
+code, then explains it in depth" (see `CLAUDE.md`). I read that as license
+to write first and explain after, treating a thorough explanation as
+equivalent to review. It isn't — review means the user sees it happen or
+looks it over *before* it's kept, not that they understand it well once
+it's already there. I also didn't check whether the day itself was scoped
+for coding at all before writing anything.
+
+**The rule.** Two separate checks, not one: (1) confirm code is in scope
+for *this* session before writing any, regardless of what the standing
+coaching mode says about who types it; (2) when code does get written,
+walk through it with the user before treating it as finished — as it's
+built, or immediately after, but before it's committed and moved past.
+Explaining code well is not a substitute for reviewing it together.
