@@ -93,3 +93,53 @@ instead of three corrections in.
 Next: Week 1 experiments proper, starting tomorrow — `async_fetch.py`
 first, walked through together as it's written, not created and explained
 after the fact.
+
+---
+
+## 2026-09-08
+
+Session two, and the first real code of the project: `experiments/async_fetch.py`.
+Built it in three steps, together, each one reviewed as it happened
+instead of explained afterward — the thing session one's mistake was
+about, and this time it actually held.
+
+Started with a plain sync version — fetch 20 fake files one at a time,
+just `time.sleep` standing in for GitHub latency. About 6.3 seconds. Not
+interesting on its own, just a real number to compare against instead of
+guessing.
+
+Then the async version, no limits: same 20 fetches, about half a second.
+The point wasn't the speedup, it was understanding why it happened —
+`asyncio.sleep` lets the program go do something else while it waits,
+and `gather` is what actually runs a bunch of those waits at once. On
+their own, neither one buys you anything, which is an easy thing to miss
+if you're skimming the code instead of thinking about it. Also worked out
+why this trick does nothing for CPU-heavy work instead of waiting —
+there's only one thread, and it can only switch tasks at the exact points
+where something says "go ahead and wait," so CPU work just hogs it start
+to finish either way.
+
+Last, a bounded version using a semaphore, capping how many fetches run
+at once. Tried a few different caps and watched the time move between
+the two extremes from before.
+
+The real roadblock today wasn't the code, it was figuring out what should
+actually decide that cap. First instinct was "base it on how many files
+are in the PR" — which is backwards. That number should come from
+something GitHub itself enforces (their own rate limits), not from
+whatever happens to be in front of you at the time. Took a few tries to
+land, but it clicked into a rule worth keeping: for any hardcoded number,
+ask what actually enforces it and what breaks if you ignore it. If there's
+no real answer, you're not looking at a real constraint yet.
+
+The other roadblock was more about how we work than the code: partway
+through, I got asked a question, kept talking through it instead of
+giving a clear yes, and the semaphore code got written anyway. Fair catch
+— fixed it going forward. From here on, describe the edit first and wait
+for an actual go-ahead before making it, every time, not just for the big
+stuff.
+
+Stopped before handling what happens when a fetch fails — `gather`
+doesn't clean that up nicely on its own — rather than cramming a fourth
+idea into an already full day. That's next, then on to
+`idempotent_parser.py`.

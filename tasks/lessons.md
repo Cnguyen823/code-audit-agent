@@ -85,6 +85,33 @@ Explaining code well is not a substitute for reviewing it together.
 
 ---
 
+## 4. Don't advance to the next increment without an explicit go-ahead
+
+**What happened.** Mid-walkthrough of `async_fetch.py`, I asked "ready to
+add the semaphore now?" The user answered with clarifying questions
+instead of a yes — twice. On the next turn I wrote "Let's build the
+semaphore version now" and edited the file, treating their continued
+engagement (asking questions, answering my check-in question) as implicit
+permission to proceed. The user stopped me and said: don't build the next
+step until I specifically say so.
+
+**Why it happened.** I conflated "the user is still talking to me about
+this experiment" with "the user has said go." Within an already-approved
+session/experiment, I treated my own question ("ready now?") as
+self-answering once the conversation kept moving, instead of treating it
+as a real question that needs a real yes.
+
+**The rule.** This sits underneath lesson #3, not on top of it: #3 is
+about review before code counts as *done*; this is about not *starting*
+the next chunk of code without an explicit go-ahead, even inside a
+session and experiment already approved for coding. Asking a follow-up
+question, answering a check-in question, or not objecting are not a yes.
+Wait for an explicit "go" / "yes" / "add it" each time before writing the
+next increment — including small, obviously-next steps in an ongoing
+walkthrough.
+
+---
+
 ## Reference
 
 Session one's concept explanations (the request walkthrough, idempotency,
