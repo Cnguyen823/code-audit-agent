@@ -14,15 +14,30 @@ event-loop mechanics work — not yet production-shaped. Deliberately the
 "what if we don't bound it" before-picture, same role the sync version
 played for step 1.
 
-Step 3 (this version): bounded semaphore. Same coroutines, same gather —
+Step 3: bounded semaphore. Same coroutines, same gather —
 the only change is an asyncio.Semaphore(limit) wrapping each fetch, so at
 most `limit` are in flight at once instead of all 20 simultaneously. This
 is the shape that's actually safe to point at a real rate-limited API.
+
+Step 4 (this version): per-task failure isolation. Plain gather propagates
+the first exception and silently drops every other in-flight result — one
+bad file would look like the whole batch crashed. Each fetch is wrapped to
+catch its own failure and return a uniform FetchResult instead, so one
+failure doesn't take down the other 19.
 """
 
 import asyncio
 import random
 import time
+from dataclasses import dataclass
+
+
+@dataclass
+class FetchResult:
+    file_id: int
+    ok: bool
+    value: str | None = None
+    error: BaseException | None = None
 
 
 def fetch_file(file_id: int) -> str:
@@ -37,12 +52,14 @@ def fetch_all_sync(file_ids: list[int]) -> list[str]:
     return [fetch_file(fid) for fid in file_ids]
 
 
-async def fetch_file_async(file_id: int) -> str:
+async def fetch_file_async(file_id: int, fail_ids: frozenset[int] = frozenset()) -> str:
     """Same fake latency, but await asyncio.sleep instead of time.sleep —
     that's the whole difference that lets the event loop run other
     coroutines during the wait instead of blocking the thread."""
     latency = random.uniform(0.1, 0.5)
     await asyncio.sleep(latency)
+    if file_id in fail_ids:
+        raise RuntimeError(f"simulated GitHub fetch failure for file {file_id}")
     return f"contents of file {file_id}"
 
 
@@ -58,6 +75,26 @@ async def fetch_file_bounded(file_id: int, sem: asyncio.Semaphore) -> str:
 async def fetch_all_bounded(file_ids: list[int], limit: int) -> list[str]:
     sem = asyncio.Semaphore(limit)
     return await asyncio.gather(*(fetch_file_bounded(fid, sem) for fid in file_ids))
+
+
+async def fetch_file_safe(
+    file_id: int, sem: asyncio.Semaphore, fail_ids: frozenset[int] = frozenset()
+) -> FetchResult:
+    try:
+        async with sem:
+            value = await fetch_file_async(file_id, fail_ids)
+        return FetchResult(file_id=file_id, ok=True, value=value)
+    except Exception as e:
+        return FetchResult(file_id=file_id, ok=False, error=e)
+
+
+async def fetch_all_safe(
+    file_ids: list[int], limit: int, fail_ids: frozenset[int] = frozenset()
+) -> list[FetchResult]:
+    sem = asyncio.Semaphore(limit)
+    return await asyncio.gather(
+        *(fetch_file_safe(fid, sem, fail_ids) for fid in file_ids)
+    )
 
 
 if __name__ == "__main__":
@@ -85,3 +122,11 @@ if __name__ == "__main__":
         results = asyncio.run(fetch_all_bounded(file_ids, limit))
         elapsed = time.perf_counter() - start
         print(f"Fetched {len(results)} files concurrently (limit={limit}) in {elapsed:.2f}s")
+
+    fail_ids = frozenset({3, 11})
+    results = asyncio.run(fetch_all_safe(file_ids, limit=5, fail_ids=fail_ids))
+    succeeded = [r for r in results if r.ok]
+    failed = [r for r in results if not r.ok]
+    print(f"\nSafe fetch: {len(succeeded)} succeeded, {len(failed)} failed")
+    for r in failed:
+        print(f"  file {r.file_id} failed: {r.error}")

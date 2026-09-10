@@ -143,3 +143,40 @@ Stopped before handling what happens when a fetch fails — `gather`
 doesn't clean that up nicely on its own — rather than cramming a fourth
 idea into an already full day. That's next, then on to
 `idempotent_parser.py`.
+
+---
+
+## 2026-09-09
+
+Finished `async_fetch.py` today — the last piece was handling what happens
+when a fetch fails. Wrapped each fetch so it catches its own failure and
+hands back a small result object instead of letting one bad file crash the
+whole batch, then rigged up two files to fail on purpose (rest of the file
+fetches all still succeed). Ran it and got exactly what I wanted: 18
+succeeded, 2 failed, both named, nothing crashed.
+
+Before writing any of it, I spent a while trying to argue myself into the
+wrapper approach being obviously correct, and kept being wrong about why.
+First I thought it'd avoid looping through every result — it doesn't, both
+approaches (the wrapper vs. just telling `gather` to hand back exceptions
+instead of raising) touch every result exactly once, same cost. Then I
+thought the wrapper was the only way to retry a specific failed file — also
+not true, `gather` keeps results in the same order you passed inputs in
+regardless of which one failed, so you can match a file back up either way.
+Then "scalability" — that one was half right, but only for scaling in the
+number of *different kinds* of fetches across the codebase, not for
+handling more files, which is identical either way. Ended up picking the
+wrapper anyway, knowingly, as a deliberate call rather than a forced one —
+worth being honest that it wasn't the "correct" choice by some rule, just
+the one I preferred once the real tradeoffs (a cleaner, harder-to-misuse
+result shape vs. more code than the job strictly needs today) were on the
+table instead of the made-up ones.
+
+Also picked up some plain Python vocabulary along the way that had nothing
+to do with async specifically — what a decorator actually is, what
+`@dataclass` saves you from writing by hand, why `frozenset` instead of a
+regular set for the failure list. Small stuff, but good to have the actual
+words now instead of pattern-matching syntax.
+
+`async_fetch.py` is done — all four steps, each one reviewed before it
+counted as finished. Next day's plan, not today's: `idempotent_parser.py`.
